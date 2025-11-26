@@ -1,0 +1,23 @@
+service:
+  name: ${SERVICE_NAME:-account-service}
+  version: ${SERVICE_VERSION:-1.0.0}
+
+database:
+  url: ${DATABASE_URL}
+
+redis:
+  url: ${REDIS_URL}
+  db: ${REDIS_DB:-0}
+
+jwt:
+  secret: ${JWT_SECRET}
+  access_expires_minutes: ${JWT_ACCESS_EXPIRES_MINUTES:-15}
+  refresh_expires_days: ${JWT_REFRESH_EXPIRES_DAYS:-30}
+
+api_ir:
+  base_url: ${API_IR_BASE_URL:-https://s.api.ir}
+  api_key: ${API_IR_API_KEY}
+  timeout_seconds: ${API_IR_TIMEOUT_SECONDS:-30}
+
+logging:
+  level: ${LOG_LEVEL:-INFO}

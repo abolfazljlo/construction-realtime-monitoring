@@ -1,0 +1,7 @@
+# Frontend Environment Variables
+# Copy this file to .env and update with your actual values
+# cp ENV_SAMPLE.txt .env
+
+# API Base URL
+VITE_API_BASE_URL=http://localhost:8001
+

@@ -1,0 +1,141 @@
+version: "3.9"
+
+services:
+  # ============================================================
+  # Databases
+  # ============================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: construction-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-construction_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - construction-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: construction-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - construction-network
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: construction-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - construction-network
+
+  # ============================================================
+  # Backend Services
+  # ============================================================
+  account:
+    build:
+      context: ./backend/services/account
+      dockerfile: Dockerfile
+    container_name: construction-account
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${ACCOUNT_DB_NAME:-account_db}
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "${ACCOUNT_SERVICE_PORT:-8001}:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - construction-network
+    restart: unless-stopped
+
+  notification:
+    build:
+      context: ./backend/services/notification
+      dockerfile: Dockerfile
+    container_name: construction-notification
+    env_file:
+      - .env
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT:-8000}:8000"
+      - "${NOTIFICATION_GRPC_PORT:-50052}:50052"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - construction-network
+    restart: unless-stopped
+
+  # ============================================================
+  # Frontend
+  # ============================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: construction-frontend
+    env_file:
+      - .env
+    environment:
+      - VITE_API_BASE_URL=${FRONTEND_API_BASE_URL:-http://localhost:8001}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - account
+      - notification
+    networks:
+      - construction-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+
+networks:
+  construction-network:
+    driver: bridge

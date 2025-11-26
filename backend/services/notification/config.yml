@@ -1,0 +1,68 @@
+service:
+  name: ${SERVICE_NAME:-notification-service}
+  version: ${SERVICE_VERSION:-1.0.0}
+
+consumers:
+  grpc:
+    enabled: ${GRPC_ENABLED:-true}
+    host: ${GRPC_HOST:-0.0.0.0}
+    port: ${GRPC_PORT:-50052}
+
+  rabbitmq:
+    enabled: ${RABBITMQ_ENABLED:-false}
+    host: ${RABBITMQ_HOST:-rabbit}
+    port: ${RABBITMQ_PORT:-5672}
+    username: ${RABBITMQ_USERNAME:-guest}
+    password: ${RABBITMQ_PASSWORD:-guest}
+    queue_name: ${RABBITMQ_QUEUE_NAME:-notifications}
+
+
+providers:
+
+  sms:
+    # Choose from:
+    #   - kavenegar
+    #   - ghasedak
+    #   - twilio
+    enabled: ${SMS_ENABLED:-true}
+
+    kavenegar:
+      enabled: ${KAVEHNEGAR_ENABLED:-true}
+      api_key: ${KAVEHNEGAR_API_KEY}
+      sender: ${KAVEHNEGAR_SENDER}
+      timeout: ${KAVEHNEGAR_TIMEOUT:-10}
+
+    ghasedak:
+      enabled: ${GHASEDAK_ENABLED:-false}
+      api_key: ${GHASEDAK_API_KEY:-}
+      line_number: ${GHASEDAK_LINE_NUMBER:-}
+
+    twilio:
+      enabled: ${TWILIO_ENABLED:-false}
+      account_sid: ${TWILIO_ACCOUNT_SID:-}
+      auth_token: ${TWILIO_AUTH_TOKEN:-}
+      from_number: ${TWILIO_FROM_NUMBER:-}
+
+
+  email:
+    # Choose from:
+    #   - smtp
+    #   - sendgrid
+    enabled: ${EMAIL_ENABLED:-true}
+
+    smtp:
+      enabled: ${SMTP_ENABLED:-true}
+      host: ${SMTP_HOST}
+      port: ${SMTP_PORT:-587}
+      username: ${SMTP_USERNAME}
+      password: ${SMTP_PASSWORD}
+      use_tls: ${SMTP_USE_TLS:-true}
+      timeout: ${SMTP_TIMEOUT:-10}
+      from: ${SMTP_FROM:-no-reply@example.com}
+
+    sendgrid:
+      enabled: ${SENDGRID_ENABLED:-false}
+      api_key: ${SENDGRID_API_KEY:-}
+
+logging:
+  level: ${LOG_LEVEL:-INFO}

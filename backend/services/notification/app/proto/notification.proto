@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package notification;
+
+message NotificationRequest {
+    string type = 1;
+    string payload_json = 2;
+}
+
+service NotificationService {
+    rpc SendNotification(NotificationRequest) returns (Ack);
+}
+
+message Ack {
+    bool success = 1;
+}
